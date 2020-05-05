@@ -1,45 +1,33 @@
-const port = 8080;
+const express = require('express');
+const bodyParser = require('body-parser');
 
-//? get connection to mySQL database
-const mySqlConnection = require('./dbHelpers/mySqlWrapper');
+const oauthServer = require('./oauth/server');
 
-//? handles all the database operations relating
-//? to saving and retrieving oauth2 tokens
-const bearerTokensDBHelper = require('./dbHelpers/bearerTokensDBHelper')(
-  mySqlConnection
+const app = express();
+const port = 3030;
+
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
+// route starting with '/client'
+app.use('/client', require('./routes/client.js'));
+
+// routes starting with '/oauth'
+app.use('/oauth', require('./routes/auth.js'));
+
+// routes starting with /secure + only reached by authed users
+app.use(
+  '/secure',
+  (req, res, next) => {
+    return next();
+  },
+  oauthServer.authenticate(),
+  require('./routes/secure')
 );
 
-//? Db operations relating to users (registering, retrieving...)
-const userDBHelper = require('./dbHelpers/userDBHelper')(mySqlConnection);
+// redirect '/' to '/client'
+app.use('/', (req, res) => res.redirect('/client'));
 
-const bodyParser = require('body-parser');
-const express = require('express');
-const oAuth2Server = require('node-oauth2-server');
-
-const authRoutesMethods = require('./authorisation/authRoutesMethods');
-const authRouter = require('./authorisation/authRouter');
-const oAuthModel = require('./authorisation/accessTokenModel');
-
-// init
-const expressApp = express();
-
-authRoutesMethods(userDBHelper);
-authRouter(express.Router(), expressApp, authRoutesMethods);
-oAuthModel(userDBHelper, bearerTokensDBHelper);
-
-expressApp.oauth = oAuth2Server({
-  mode: oAuthModel,
-  grants: ['password'],
-  debug: true,
-});
-
-//* middlewares
-// authRouter as middleware in express to handle all routes that start with /auth
-expressApp.use('./auth', authRouter);
-// oAuth error handling
-expressApp.use(expressApp.oauth.errorHandler()); //! what ?
-expressApp.use(bodyParser.urlencoded({ extended: true }));
-
-expressApp.listen(port, () => {
-  console.log(`server running, listenning on port ${port}`);
+app.listen(port, () => {
+  console.log(`app listening at http://localhost/${port}`);
 });

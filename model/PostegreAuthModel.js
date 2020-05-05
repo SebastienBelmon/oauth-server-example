@@ -1,4 +1,22 @@
+const { Client } = require('pg');
+
 const IAuthModel = require('./IAuthModel');
+const DebugControl = require('../utils/debug');
+
+require('dotenv').config();
+
+const client = new Client({
+  user: process.env.PG_USER,
+  host: process.env.PG_HOST,
+  database: process.env.PG_DB,
+  password: process.env.PG_PASSWORD,
+  port: process.env.PG_PORT,
+});
+
+const log = ({ title, parameters }) => {
+  DebugControl.log.functionName(title);
+  DebugControl.log.parameters(parameters);
+};
 
 class PostegreAuthModel extends IAuthModel {
   /**
@@ -6,7 +24,32 @@ class PostegreAuthModel extends IAuthModel {
    * @param {string} clientId client ID
    * @param {string} clientSecret client Secret
    */
-  getClient(clientId, clientSecret) {}
+  async getClient(clientId, clientSecret) {
+    // debug mode
+    log({
+      title: 'Get Client',
+      parameters: [
+        { name: 'clientId', value: clientId },
+        { name: 'clientSecret', value: clientSecret },
+      ],
+    });
+
+    await client.connect();
+
+    const queryResult = await client.query(`
+      SELECT * FROM clients
+      WHERE client_id = '${clientId}' 
+      AND client_secret = '${clientSecret}';
+    `);
+
+    await client.end();
+
+    console.log(queryResult.rows);
+
+    return new Promise((resolve) => {
+      resolve(queryResult.rows[0]);
+    });
+  }
 
   /**
    * Insert token into database

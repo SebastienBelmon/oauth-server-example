@@ -29,5 +29,5 @@ app.use(
 app.use('/', (req, res) => res.redirect('/client'));
 
 app.listen(port, () => {
-  console.log(`app listening at http://localhost/${port}`);
+  console.log(`app listening at http://localhost:${port}`);
 });

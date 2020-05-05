@@ -46,8 +46,6 @@ class HardcodedAuthModel extends IAuthModel {
       redirectUris: ['http://localhost:3030/client/app'],
     };
 
-    console.log(db.client);
-
     return new Promise((resolve) => {
       resolve(db.client);
     });

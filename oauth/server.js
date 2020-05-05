@@ -1,5 +1,6 @@
 const OAuthServer = require('express-oauth-server');
-const authModel = require('../model')('hardcoded');
+// const authModel = require('../model')('hardcoded');
+const authModel = require('../model')('postegre');
 
 // init instance of OAuthServer with appropriate options
 const oauthServer = new OAuthServer({
